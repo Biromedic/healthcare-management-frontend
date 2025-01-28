@@ -9,11 +9,17 @@ export type PrescriptionRequest = {
   medicines: Medicine[];
 };
 
-export type PrescriptionResponse = {
+export interface PrescriptionResponse {
   id: number;
-  doctorId: string;
+  visitId: number;
+  doctorUserId: string;
+  pharmacyUserId: string | null;
   patientTC: string;
-  medicines: Medicine[];
-  status: 'INCOMPLETE' | 'PENDING' | 'COMPLETED';
-  createdAt: string;
-};
+  medicines: {
+    medicineId: string;
+    medicineName: string;
+    quantity: number;
+    price: number;
+  }[];
+  status: string;
+}
