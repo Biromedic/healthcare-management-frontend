@@ -21,11 +21,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { prescriptionApi } from "../api/client";
 
 type Medicine = {
-    id: string;
-    name: string;
-    price: number;
-  };
-  
+  id: string;
+  name: string;
+  price: number;
+};
 
 type PrescriptionFormValues = {
   patientTC: string;
@@ -37,14 +36,12 @@ type PrescriptionFormValues = {
 };
 
 export default function CreatePrescriptionPage() {
-  const { user } = useAuth();
   const [searchResults, setSearchResults] = useState<Medicine[]>([]);
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Form tanımı
   const { register, handleSubmit, control, setValue, formState: { errors } } =
     useForm<PrescriptionFormValues>({
       defaultValues: {
@@ -58,7 +55,6 @@ export default function CreatePrescriptionPage() {
     name: "medicines",
   });
 
-  // İlaç araması (public endpoint)
   const searchMedicines = async (query: string) => {
     if (query.length < 2) {
       setSearchResults([]);
@@ -67,7 +63,7 @@ export default function CreatePrescriptionPage() {
     try {
       setSearching(true);
       const response = await prescriptionApi.getMedicines(query);
-      if (response.data && response.data.content) {
+      if (response.data?.content) {
         setSearchResults(response.data.content);
       } else {
         setSearchResults([]);
@@ -80,34 +76,39 @@ export default function CreatePrescriptionPage() {
     }
   };
 
-  // Form submit
   const onSubmit = async (data: PrescriptionFormValues) => {
     setLoading(true);
     setServerError(null);
     setSuccess(null);
-
+  
     try {
-      // Validasyon sonrası, her bir ilacın ID dolu olduğundan emin olabiliriz.
       const payload = {
         patientTC: data.patientTC,
-        medicines: data.medicines.map(m => ({
+        medicines: data.medicines.map((m) => ({
           medicineId: m.medicineId,
           medicineName: m.medicineName,
-          quantity: m.quantity
-        }))
+          quantity: m.quantity,
+        })),
       };
-
-      // /prescriptions/v1 endpoint'ine POST
-      const response = await prescriptionApi.create(payload);
-      setSuccess("Prescription created successfully!");
-      console.log("Created Prescription:", response);
+  
+      // Reçete oluştur
+      const createResponse = await prescriptionApi.create(payload);
+  
+      // Reçete oluşturma başarılıysa Submit isteği gönder
+      if (createResponse?.id) {
+        await prescriptionApi.submit(createResponse.id);
+        setSuccess("Prescription created and submitted successfully!");
+      } else {
+        throw new Error("Failed to retrieve prescription ID for submission.");
+      }
     } catch (error: any) {
-      console.error("Error creating prescription:", error);
+      console.error("Error during prescription creation/submission:", error);
       setServerError(error?.message || "An error occurred");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <Container maxWidth="md">
@@ -115,16 +116,15 @@ export default function CreatePrescriptionPage() {
       <Typography variant="h4" gutterBottom>
         Create Prescription
       </Typography>
-
-      <Paper sx={{ p: 3, mt: 2 }}>
+      <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <TextField
             label="Patient TC"
+            fullWidth
+            margin="normal"
             {...register("patientTC", { required: "Patient TC is required" })}
             error={!!errors.patientTC}
             helperText={errors.patientTC?.message}
-            fullWidth
-            margin="normal"
           />
 
           <Typography variant="h6" sx={{ mt: 2 }}>
@@ -132,8 +132,8 @@ export default function CreatePrescriptionPage() {
           </Typography>
 
           {fields.map((field, index) => {
-            const medIdError = errors.medicines?.[index]?.medicineId?.message;
-            const quantityError = errors.medicines?.[index]?.quantity?.message;
+            const idError = errors.medicines?.[index]?.medicineId?.message;
+            const qtyError = errors.medicines?.[index]?.quantity?.message;
 
             return (
               <Box
@@ -144,15 +144,6 @@ export default function CreatePrescriptionPage() {
                   options={searchResults}
                   getOptionLabel={(option) => option.name}
                   loading={searching}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Search Medicine"
-                      error={!!medIdError}
-                      helperText={medIdError}
-                      onChange={(e) => searchMedicines(e.target.value)}
-                    />
-                  )}
                   onChange={(_, value) => {
                     if (value) {
                       setValue(`medicines.${index}.medicineId`, value.id);
@@ -162,31 +153,39 @@ export default function CreatePrescriptionPage() {
                       setValue(`medicines.${index}.medicineName`, "");
                     }
                   }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Search Medicine"
+                      error={!!idError}
+                      helperText={idError}
+                      onChange={(e) => searchMedicines(e.target.value)}
+                    />
+                  )}
                 />
 
                 <TextField
                   label="Quantity"
                   type="number"
-                  sx={{ width: 100, mx: 2 }}
-                  error={!!quantityError}
-                  helperText={quantityError}
+                  sx={{ width: 80, mx: 2 }}
                   {...register(`medicines.${index}.quantity`, {
-                    required: "Quantity is required",
+                    required: "Quantity required",
                     valueAsNumber: true,
-                    min: { value: 1, message: "Min quantity is 1" }
+                    min: { value: 1, message: "Min 1" }
                   })}
+                  error={!!qtyError}
+                  helperText={qtyError}
                 />
 
                 <IconButton onClick={() => remove(index)} color="error">
                   <RemoveIcon />
                 </IconButton>
 
-                {/* Gizli alanlar: validate 'medicineId' dolu mu? */}
+                {/* hidden inputs to store validated data */}
                 <input
                   type="hidden"
                   {...register(`medicines.${index}.medicineId`, {
-                    validate: (val) =>
-                      val !== "" || "You must select a valid medicine"
+                    validate: (val) => val !== "" || "Select a medicine"
                   })}
                 />
                 <input
@@ -208,15 +207,14 @@ export default function CreatePrescriptionPage() {
             Add Medicine
           </Button>
 
-          {serverError && <Alert severity="error">{serverError}</Alert>}
-          {success && <Alert severity="success">{success}</Alert>}
+          {serverError && <Alert severity="error" sx={{ mt: 2 }}>{serverError}</Alert>}
+          {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
 
           <Button
             type="submit"
             variant="contained"
-            color="primary"
-            disabled={loading}
             sx={{ mt: 2 }}
+            disabled={loading}
           >
             {loading ? <CircularProgress size={24} /> : "Create Prescription"}
           </Button>
