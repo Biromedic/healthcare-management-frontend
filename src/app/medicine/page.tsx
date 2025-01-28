@@ -9,10 +9,11 @@ import { Navbar } from '../components/Navbar';
 
 
 type Medicine = {
-    id: number;
+    id: string;
     name: string;
     price: number;
   };
+
   
   export default function MedicineSearch() {
     const { user } = useAuth();
