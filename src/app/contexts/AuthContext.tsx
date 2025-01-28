@@ -3,13 +3,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useCookies } from 'react-cookie';
+import { useRouter } from 'next/navigation';
 
 type User = {
   id: string;
   email: string;
+  roles: string[];
   firstName: string;
   lastName: string;
-  roles: string[];
 };
 
 type AuthContextType = {
@@ -22,65 +23,77 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [cookies, setCookie, removeCookie] = useCookies(['token']);
+  const router = useRouter();
 
   useEffect(() => {
-    const validateToken = async () => {
-      try {
-        const response = await axios.post('http://localhost:8080/api/auth/v1/validate', {}, {
-          headers: { Authorization: `Bearer ${cookies.token}` }
-        });
-        
-        if (response.data.isValid) {
-          setUser({
-            id: response.data.userId,
-            email: response.data.email,
-            firstName: response.data.firstName,
-            lastName: response.data.lastName,
-            roles: response.data.roles
-          });
-        }
-      } catch (error) {
-        removeCookie('token');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (cookies.token) validateToken();
-    else setLoading(false);
+    const storedToken = cookies.token;
+    if (!storedToken) {
+      setLoading(false);
+      return;
+    }
+    validateToken(storedToken);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await axios.post('http://localhost:8080/api/auth/v1/signin', {
-      email,
-      password
-    });
+  async function validateToken(token: string) {
+    try {
+      const res = await axios.post('http://localhost:8080/api/auth/v1/validate', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (res.data.isValid) {
+        setUser({
+          id: res.data.userId,
+          email: res.data.email,
+          firstName: res.data.firstName,
+          lastName: res.data.lastName,
+          roles: res.data.roles
+        });
+      } else {
+        removeCookie('token');
+      }
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      removeCookie('token');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    setCookie('token', response.data.token, { path: '/' });
-    setUser({
-      id: response.data.userInfo.id,
-      email: response.data.userInfo.email,
-      firstName: response.data.userInfo.firstName,
-      lastName: response.data.userInfo.lastName,
-      roles: response.data.userInfo.roles
-    });
-  };
+  async function login(email: string, password: string) {
+    try {
+      const res = await axios.post('http://localhost:8080/api/auth/v1/signin', { email, password });
+      const token = res.data.token;
+      
+      setCookie('token', token, { path: '/' });
+      setUser({
+        id: res.data.userInfo.id,
+        email: res.data.userInfo.email,
+        firstName: res.data.userInfo.firstName,
+        lastName: res.data.userInfo.lastName,
+        roles: res.data.userInfo.roles
+      });
+    } catch (err) {
+      throw new Error('Authentication failed');
+    }
+  }
 
-  const logout = () => {
-    removeCookie('token');
+  function logout() {
+    removeCookie('token', { path: '/' });
     setUser(null);
-    axios.post('http://localhost:8080/api/auth/v1/sign-out');
-  };
+    router.push('/login');
+  }
 
   return (
-    <AuthContext.Provider value={{ user, token: cookies.token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token: cookies.token ?? null, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext);
+}
