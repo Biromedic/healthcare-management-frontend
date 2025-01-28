@@ -1,95 +1,52 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { Container, Typography, Button, Box } from '@mui/material'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { useAuth } from './contexts/AuthContext'
+import { Navbar } from './components/Navbar'
+import Link from 'next/link'
+
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const { user } = useAuth()
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+  return (
+    <ProtectedRoute>
+      <Navbar />
+      <Container maxWidth="lg">
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="h3" gutterBottom>
+            Hoş Geldiniz, {user?.firstName} {user?.lastName}
+          </Typography>
+          
+          <Typography variant="h5" sx={{ mb: 3 }}>
+            Rolünüz: {user?.roles.join(', ')}
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+            <Link href="/medicine" passHref>
+              <Button variant="contained" size="large">
+                Search Medicines
+              </Button>
+            </Link>
+            {user?.roles.includes('ROLE_ADMIN') && (
+              <Link href="/admin" passHref>
+                <Button variant="contained" size="large" color="secondary">
+                  Admin Panel
+                </Button>
+              </Link>
+            )}
+
+            {user?.roles.includes('ROLE_DOCTOR') && (
+              <Link href="/prescription/" passHref>
+                <Button variant="contained" size="large" color="primary">
+                  Create Prescription
+                  </Button>
+                  </Link>
+                  )}
+          </Box>
+        </Box>
+      </Container>
+    </ProtectedRoute>
+  )
 }
