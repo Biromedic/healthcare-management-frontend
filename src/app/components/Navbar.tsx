@@ -10,18 +10,29 @@ export const Navbar = () => {
   return (
     <AppBar position="static" elevation={0} sx={{ bgcolor: 'background.paper', color: 'text.primary' }}>
       <Toolbar sx={{ maxWidth: 'lg', width: '100%', mx: 'auto' }}>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-          Medical System
-        </Typography>
+      <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600, cursor: 'pointer' }} onClick={() => window.location.href = '/'}>
+        Medical System
+      </Typography>
         
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {/* Yeni Navigasyon Linkleri */}
           {user?.roles.includes('ROLE_DOCTOR') && (
-            <Link href="/medicine/search" passHref>
+            <Link href="/medicine" passHref>
               <Button variant="text" color="inherit">
                 Medicine Search
               </Button>
             </Link>
+          )}
+
+          {user?.roles.includes('ROLE_DOCTOR') && (
+          <Link href="/prescription" passHref>
+            <Button color="inherit">Create Prescription</Button>
+          </Link>
+          )}
+
+          {user?.roles.includes('ROLE_PHARMACIST') && (
+          <Link href="/prescription/list" passHref>
+            <Button color="inherit">View Prescriptions</Button>
+          </Link>
           )}
           
           {user?.roles.includes('ROLE_ADMIN') && (
@@ -32,7 +43,7 @@ export const Navbar = () => {
             </Link>
           )}
 
-          {/* Mevcut Kullanıcı Bilgileri */}
+          {/* Logged in user info */}
           {user ? (
             <>
               <Typography sx={{ fontWeight: 500 }}>{user.email}</Typography>
