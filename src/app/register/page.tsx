@@ -21,11 +21,6 @@ const roles = [
   { value: 'ADMIN', label: 'Yönetici' }
 ];
 
-declare namespace NodeJS {
-  interface ProcessEnv {
-    NEXT_PUBLIC_BACKEND_URL: string;
-  }
-}
 
 export default function RegisterPage() {
   const router = useRouter();
