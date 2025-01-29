@@ -21,6 +21,12 @@ const roles = [
   { value: 'ADMIN', label: 'Yönetici' }
 ];
 
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NEXT_PUBLIC_BACKEND_URL: string;
+  }
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
@@ -31,7 +37,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      await axios.post('http://localhost:8080/api/auth/v1/signup', {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/v1/signup`, {
         email: data.email,
         password: data.password,
         firstName: data.firstName,

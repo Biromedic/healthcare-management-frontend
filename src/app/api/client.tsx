@@ -2,15 +2,20 @@ import axios from 'axios';
 import { PrescriptionRequest, PrescriptionResponse } from '../models/prescription';
 import Cookies from 'js-cookie'; 
 
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NEXT_PUBLIC_BACKEND_URL: string;
+  }
+}
+
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
-  headers: {
+  baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`,  headers: {
     'Content-Type': 'application/json',
   },
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = Cookies.get('token'); // Cookies'den token al
+  const token = Cookies.get('token'); 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   } else {

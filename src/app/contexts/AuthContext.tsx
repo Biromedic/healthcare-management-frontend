@@ -29,6 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [cookies, setCookie, removeCookie] = useCookies(['token']);
   const router = useRouter();
 
+  const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
   useEffect(() => {
     const storedToken = cookies.token;
     if (!storedToken) {
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function validateToken(token: string) {
     try {
-      const res = await axios.post('http://localhost:8080/api/auth/v1/validate', {}, {
+      const res = await axios.post(`${backend_url}/api/auth/v1/validate`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -65,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     try {
-      const res = await axios.post('http://localhost:8080/api/auth/v1/signin', { email, password });
+      const res = await axios.post(`${backend_url}/api/auth/v1/signin`, { email, password });
       const token = res.data.token;
       
       setCookie('token', token, { path: '/' });
