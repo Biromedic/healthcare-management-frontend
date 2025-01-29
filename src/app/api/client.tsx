@@ -2,11 +2,6 @@ import axios from 'axios';
 import { PrescriptionRequest, PrescriptionResponse } from '../models/prescription';
 import Cookies from 'js-cookie'; 
 
-declare namespace NodeJS {
-  interface ProcessEnv {
-    NEXT_PUBLIC_BACKEND_URL: string;
-  }
-}
 
 export const apiClient = axios.create({
   baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`,  headers: {

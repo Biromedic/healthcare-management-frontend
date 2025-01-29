@@ -17,7 +17,6 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { Navbar } from "../components/Navbar";
-import { useAuth } from "../contexts/AuthContext";
 import { prescriptionApi } from "../api/client";
 
 type Medicine = {
